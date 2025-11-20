@@ -422,7 +422,3 @@ This methodology achieves production-ready NER performance while maintaining rea
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** November 2024  
-**Author:** TFOCO Team
-
