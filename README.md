@@ -2,7 +2,7 @@
 
 A Proof of Concept for Named Entity Recognition (NER) in financial documents, built for CMI Architecture & Innovation team.
 
-## Test Deliverables (3 Hours)
+## Test Deliverables 
 
 This PoC addresses all 4 required work items:
 
@@ -251,6 +251,3 @@ See `WORK_ITEMS_CHECKLIST.md` for detailed completion status.
 
 ---
 
-**Built for:** CMI Architecture & Innovation Team  
-**Test:** Named Entity Recognition (NER) Proof of Concept  
-**Status:** All requirements met ✓
