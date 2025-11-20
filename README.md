@@ -1,8 +1,8 @@
-# TFOCO - The Family Office Financial Document Reader
+# The Family Office Financial Document Reader
 
 A Proof of Concept for Named Entity Recognition (NER) in financial documents, built for CMI Architecture & Innovation team.
 
-## 🚀 QUICK START (For Evaluators)
+## QUICK START 
 
 ```bash
 # 1. Install dependencies

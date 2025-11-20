@@ -1,4 +1,4 @@
-# TFOCO Architecture Documentation
+#Architecture Documentation
 
 ## Work Item 1: Global Architecture Document (GAD)
 
@@ -8,7 +8,7 @@
 
 ### 1.1 Context: CMI Information System Integration
 
-The TFOCO Document Reader is designed to integrate with CMI's existing Information System infrastructure, serving as an intelligent document processing layer for multiple CMI trading, risk management, and portfolio systems.
+The Document Reader is designed to integrate with CMI's existing Information System infrastructure, serving as an intelligent document processing layer for multiple CMI trading, risk management, and portfolio systems.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -24,7 +24,7 @@ The TFOCO Document Reader is designed to integrate with CMI's existing Informati
 └───────────────────────────────┼──────────────────────────────────────┘
                                 ▼
               ┌─────────────────────────────────────────────┐
-              │   TFOCO Document Reader Gateway             │
+              │   Document Reader Gateway             │
               │  • API Authentication (JWT/OAuth2)          │
               │  • Rate Limiting (100 req/min per system)   │
               │  • Document Queue Management (Kafka/RabbitMQ)│
@@ -43,14 +43,14 @@ The TFOCO Document Reader is designed to integrate with CMI's existing Informati
               └─────────┬───────────────┘
                         ▼
               ┌──────────────────┐
-              │ TFOCO Core Engine│
+              │ Core Engine│
               │ (See Section 2)  │
               └──────────────────┘
 ```
 
 ### 1.2 Document Input Channels
 
-TFOCO supports multiple document ingestion channels to accommodate different CMI workflows:
+supports multiple document ingestion channels to accommodate different CMI workflows:
 
 #### Channel 1: Web UI Upload (Synchronous)
 - **Use Case:** Ad-hoc document review by traders/analysts
@@ -85,13 +85,12 @@ Response: {"status": "completed", "entities": [...]}
 #### Channel 3: Message Queue (Asynchronous)
 - **Use Case:** High-volume batch processing (end-of-day trade confirmations)
 - **Protocol:** Kafka topics or RabbitMQ exchanges
-- **Flow:** CMI systems publish documents → TFOCO consumes → Results published to result topic
+- **Flow:** CMI systems publish documents → consumes → Results published to result topic
 - **Throughput:** 100-500 documents/minute
 - **Retry Logic:** Automatic retry with exponential backoff
 
 #### Channel 4: Email Integration (Asynchronous)
 - **Use Case:** Automated processing of emailed confirmations
-- **Email Address:** `documents@tfoco.cmi.internal`
 - **Processing:** Email parser extracts attachments → Triggers extraction → Results emailed back
 - **Security:** SPF/DKIM validation, encrypted attachments only
 
@@ -119,7 +118,7 @@ Response: {"status": "completed", "entities": [...]}
 
 ### 1.4 Document Confidentiality Levels
 
-TFOCO implements multi-tier security based on document classification:
+implements multi-tier security based on document classification:
 
 | Level | Description | Handling | Storage | Access |
 |-------|-------------|----------|---------|--------|
@@ -155,11 +154,11 @@ TFOCO implements multi-tier security based on document classification:
 
 ---
 
-## 2. TFOCO Core System Architecture
+## 2. Core System Architecture
 
 ### 2.1 System Overview
 
-TFOCO is a full-stack financial document reader application that extracts structured entities from unstructured documents using Named Entity Recognition (NER).
+The project is a full-stack financial document reader application that extracts structured entities from unstructured documents using Named Entity Recognition (NER).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -491,8 +490,6 @@ services:
     - Port 3000
     - Proxy API requests to backend
     
-networks:
-  - tfoco-network (shared)
 ```
 
 **Production Considerations:**
