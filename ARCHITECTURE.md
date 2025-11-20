@@ -414,7 +414,5 @@ async def batch_extract(files: List[UploadFile]):
 
 ---
 
-**Last Updated:** November 2024  
-**Version:** 1.0.0  
-**Maintainer:** The Family Office
+
 
