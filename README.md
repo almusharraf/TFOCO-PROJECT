@@ -2,6 +2,31 @@
 
 A Proof of Concept for Named Entity Recognition (NER) in financial documents, built for CMI Architecture & Innovation team.
 
+## 🚀 QUICK START (For Evaluators)
+
+```bash
+# 1. Install dependencies
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+
+# 2. Run tests
+pytest -v
+
+# 3. Or start API server
+uvicorn app.main:app --port 8000
+
+# 4. Test extraction
+curl -X POST "http://localhost:8000/api/v1/extract" \
+  -F "file=@../sample_data/FR001400QV82_AVMAFC_30Jun2028.txt"
+```
+
+**Alternative: View demo notebook**
+- Open `notebooks/demo.ipynb` in Jupyter/VS Code
+- All extraction demonstrations are there with outputs
+
 ## Test Deliverables (3 Hours)
 
 This PoC addresses all 4 required work items:
