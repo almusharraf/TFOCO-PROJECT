@@ -6,10 +6,31 @@ A Proof of Concept for Named Entity Recognition (NER) in financial documents, bu
 
 This PoC addresses all 4 required work items:
 
-1. **Architecture Document (GAD)** - System design and component interactions
-2. **Rule-Based Parser** - Python program for DOCX files
-3. **NER Model + Methodology** - spaCy integration + fine-tuning guide for chat files
-4. **LLM Methodology** - Pipeline design for PDF documents with RAG/prompting
+1. **Work Item 1 - Global Architecture Document (GAD)** - `ARCHITECTURE.md`
+   - CMI Information System integration context
+   - Document input channels (Web UI, REST API, Message Queue, Email)
+   - Synchronous vs asynchronous processing modes
+   - Document confidentiality handling
+   - Complete system component interactions
+
+2. **Work Item 2 - Rule-Based Parser** - `backend/app/extractors/`
+   - Python program for processing DOCX, PDF, and TXT files
+   - 15+ financial entity types extraction
+   - Structured JSON output with metadata
+   - Comprehensive normalization functions
+
+3. **Work Item 3 - NER Model + Methodology** - `notebooks/demo.ipynb` + `NER_FINETUNING_METHODOLOGY.md`
+   - Python code demonstrating spaCy NER model usage
+   - Training data preparation and annotation methodology
+   - Model selection, fine-tuning process, and evaluation
+   - Deployment strategy and cost estimation
+
+4. **Work Item 4 - LLM Methodology** - `LLM_PDF_METHODOLOGY.md`
+   - Comprehensive LLM-based extraction pipeline for PDF documents
+   - Chunking strategies and prompting techniques
+   - RAG (Retrieval-Augmented Generation) implementation
+   - Error handling, validation, and hybrid approach
+   - Cost optimization and performance metrics
 
 ## Features
 
@@ -78,31 +99,42 @@ npm run dev
 
 ```
 TFOCO-PROJECT/
-├── ARCHITECTURE.md                    # Work Item 1: GAD
-├── NER_FINETUNING_METHODOLOGY.md     # Work Item 3: NER GMD
-├── API_DOCUMENTATION.md              # Work Item 4: LLM GMD
-├── WORK_ITEMS_CHECKLIST.md           # Requirements completion checklist
+├── ARCHITECTURE.md                        # Work Item 1: GAD (CMI IS integration)
+├── LLM_PDF_METHODOLOGY.md                 # Work Item 4: LLM GMD for PDF processing
+├── NER_FINETUNING_METHODOLOGY.md          # Work Item 3: NER fine-tuning GMD
+├── API_DOCUMENTATION.md                   # API reference and setup guide
+├── README.md                              # This file
 │
-├── backend/                          # Work Item 2: Rule-based parser
+├── backend/                               # Work Item 2: Rule-based parser
 │   ├── app/
-│   │   ├── main.py                   # FastAPI endpoints
+│   │   ├── main.py                        # FastAPI endpoints
 │   │   ├── extractors/
-│   │   │   ├── rule_based.py         # Regex pattern matching
-│   │   │   └── document_processor.py # PDF/DOCX/TXT handling
+│   │   │   ├── rule_based.py              # Regex pattern matching
+│   │   │   └── document_processor.py      # PDF/DOCX/TXT handling
 │   │   ├── utils/
-│   │   │   └── normalizers.py        # Value normalization
-│   │   └── models/
-│   │       └── schemas.py            # Pydantic models
-│   └── requirements.txt
+│   │   │   └── normalizers.py             # Value normalization
+│   │   ├── models/
+│   │   │   └── schemas.py                 # Pydantic models
+│   │   └── tests/
+│   │       ├── test_normalizers.py        # Unit tests
+│   │       └── test_api.py                # Integration tests
+│   ├── requirements.txt                   # Python dependencies
+│   └── Dockerfile
 │
 ├── notebooks/
-│   └── demo.ipynb                    # Work Item 3: NER model demo
+│   └── demo.ipynb                         # Work Item 3: NER model demo with spaCy
 │
-├── sample_data/                      # Test files
-│   ├── FR001400QV82_AVMAFC_30Jun2028.txt        # Chat format
-│   └── ZF4894_ALV_07Aug2026_physical.docx       # DOCX format
+├── sample_data/                           # Test files
+│   ├── FR001400QV82_AVMAFC_30Jun2028.txt  # Chat format (for NER)
+│   └── ZF4894_ALV_07Aug2026_physical.docx # DOCX format (for rule-based)
 │
-└── frontend/                         # Optional UI (bonus)
+├── frontend/                              # Web UI (bonus deliverable)
+│   ├── src/
+│   ├── Dockerfile
+│   └── package.json
+│
+├── docker-compose.yml                     # Full-stack orchestration
+└── Makefile                               # Development commands
 ```
 
 ## Extracted Entities
@@ -228,14 +260,23 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 All 4 required work items completed:
 
-- [x] **Work Item 1 (30 min):** Global Architecture Document - See `ARCHITECTURE.md`
-- [x] **Work Item 2 (60 min):** Rule-Based Parser for DOCX - See `backend/app/extractors/`
-- [x] **Work Item 3 (60 min):** NER Model for Chat + GMD - See `notebooks/demo.ipynb` and `NER_FINETUNING_METHODOLOGY.md`
-- [x] **Work Item 4 (30 min):** LLM Methodology for PDF - See `API_DOCUMENTATION.md`
+- [x] **Work Item 1 (GAD):** Global Architecture Document
+  - **File:** `ARCHITECTURE.md`
+  - **Content:** CMI IS integration, document channels, sync/async processing, security levels
+
+- [x] **Work Item 2 (Coding):** Rule-Based Parser for DOCX Files
+  - **Files:** `backend/app/extractors/rule_based.py`, `document_processor.py`, `normalizers.py`
+  - **Features:** 15+ entity types, DOCX/PDF/TXT support, JSON output, confidence scoring
+
+- [x] **Work Item 3 (Coding + GMD):** NER Model for Chat Files
+  - **Python Code:** `notebooks/demo.ipynb` (spaCy NER model demonstration)
+  - **Methodology:** `NER_FINETUNING_METHODOLOGY.md` (training, fine-tuning, deployment)
+
+- [x] **Work Item 4 (GMD):** LLM Methodology for PDF Documents
+  - **File:** `LLM_PDF_METHODOLOGY.md`
+  - **Content:** Chunking, prompting, RAG, validation, hybrid approach, cost optimization
 
 **Total Time:** 180 minutes (3 hours as specified)
-
-See `WORK_ITEMS_CHECKLIST.md` for detailed completion status.
 
 ---
 
@@ -250,7 +291,3 @@ See `WORK_ITEMS_CHECKLIST.md` for detailed completion status.
 | File Formats | PDF, DOCX, TXT |
 
 ---
-
-**Built for:** CMI Architecture & Innovation Team  
-**Test:** Named Entity Recognition (NER) Proof of Concept  
-**Status:** All requirements met ✓

@@ -1,6 +1,163 @@
 # TFOCO Architecture Documentation
 
-## System Overview
+## Work Item 1: Global Architecture Document (GAD)
+
+---
+
+## 1. CMI Enterprise Integration Architecture
+
+### 1.1 Context: CMI Information System Integration
+
+The TFOCO Document Reader is designed to integrate with CMI's existing Information System infrastructure, serving as an intelligent document processing layer for multiple CMI trading, risk management, and portfolio systems.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    CMI Information System (IS)                       │
+│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────────┐  │
+│  │ Trading Systems│  │  Risk Mgmt     │  │  Portfolio Mgmt      │  │
+│  │ • Front Office │  │  • VaR Calc    │  │  • Position Tracking │  │
+│  │ • Order Mgmt   │  │  • Compliance  │  │  • Reporting         │  │
+│  └────────┬───────┘  └────────┬───────┘  └──────────┬───────────┘  │
+│           │                   │                      │               │
+│           └───────────────────┼──────────────────────┘               │
+│                               │ REST API / Message Queue             │
+└───────────────────────────────┼──────────────────────────────────────┘
+                                ▼
+              ┌─────────────────────────────────────────────┐
+              │   TFOCO Document Reader Gateway             │
+              │  • API Authentication (JWT/OAuth2)          │
+              │  • Rate Limiting (100 req/min per system)   │
+              │  • Document Queue Management (Kafka/RabbitMQ)│
+              │  • Security Classification Routing          │
+              └────────────┬────────────────────────────────┘
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+              ▼                         ▼
+        ┌──────────┐              ┌──────────┐
+        │  Sync    │              │  Async   │
+        │Processing│              │Processing│
+        │ (<5s)    │              │ (Queue)  │
+        └──────────┘              └──────────┘
+              │                         │
+              └─────────┬───────────────┘
+                        ▼
+              ┌──────────────────┐
+              │ TFOCO Core Engine│
+              │ (See Section 2)  │
+              └──────────────────┘
+```
+
+### 1.2 Document Input Channels
+
+TFOCO supports multiple document ingestion channels to accommodate different CMI workflows:
+
+#### Channel 1: Web UI Upload (Synchronous)
+- **Use Case:** Ad-hoc document review by traders/analysts
+- **Process:** User uploads via browser → Immediate processing → Real-time results
+- **Performance:** < 5 seconds for documents up to 10MB
+- **Authentication:** SSO integration with CMI identity provider
+- **File Limit:** 10MB per file, PDF/DOCX/TXT formats
+
+#### Channel 2: REST API (Synchronous/Asynchronous)
+- **Use Case:** Programmatic invocation from CMI systems
+- **Authentication:** JWT tokens with role-based access control
+- **Rate Limits:** 100 requests/minute per system, 1000/day per user
+
+**Synchronous Mode:**
+```http
+POST /api/v1/extract
+Authorization: Bearer <jwt_token>
+Content-Type: multipart/form-data
+
+Response: Immediate JSON with entities (< 5s)
+```
+
+**Asynchronous Mode:**
+```http
+POST /api/v1/extract/async
+Response: {"job_id": "abc-123", "status": "queued"}
+
+GET /api/v1/jobs/abc-123
+Response: {"status": "completed", "entities": [...]}
+```
+
+#### Channel 3: Message Queue (Asynchronous)
+- **Use Case:** High-volume batch processing (end-of-day trade confirmations)
+- **Protocol:** Kafka topics or RabbitMQ exchanges
+- **Flow:** CMI systems publish documents → TFOCO consumes → Results published to result topic
+- **Throughput:** 100-500 documents/minute
+- **Retry Logic:** Automatic retry with exponential backoff
+
+#### Channel 4: Email Integration (Asynchronous)
+- **Use Case:** Automated processing of emailed confirmations
+- **Email Address:** `documents@tfoco.cmi.internal`
+- **Processing:** Email parser extracts attachments → Triggers extraction → Results emailed back
+- **Security:** SPF/DKIM validation, encrypted attachments only
+
+### 1.3 Processing Modes
+
+#### Synchronous Processing
+- **Trigger:** HTTP request or web upload
+- **Execution:** Real-time processing in foreground
+- **Response:** Immediate (< 1-5 seconds)
+- **Suitable For:** 
+  - Small documents (< 5 pages)
+  - TXT files
+  - Interactive workflows
+  - Real-time trading decisions
+
+#### Asynchronous Processing
+- **Trigger:** Queue message or async API call
+- **Execution:** Background job with job tracking
+- **Response:** Job ID returned immediately, poll for results
+- **Suitable For:**
+  - Large PDFs (20+ pages)
+  - Batch processing (100+ documents)
+  - Non-urgent workflows
+  - End-of-day reconciliation
+
+### 1.4 Document Confidentiality Levels
+
+TFOCO implements multi-tier security based on document classification:
+
+| Level | Description | Handling | Storage | Access |
+|-------|-------------|----------|---------|--------|
+| **Public** | Market data, public filings | Standard processing | 24h retention | All authenticated users |
+| **Internal** | Trade confirmations | TLS in transit | 7d retention | Trading desk users |
+| **Confidential** | Client agreements | E2E encryption | 30d encrypted | Compliance + Senior traders |
+| **Restricted** | Regulatory submissions | Air-gapped processing | Permanent audit log | Compliance officers only |
+
+### 1.5 CMI System Integration Points
+
+```
+┌──────────────────┐         ┌──────────────────┐
+│  Trading System  │────────▶│  TFOCO API       │
+│  (Front Office)  │         │  Extract entities│
+└──────────────────┘         └────────┬─────────┘
+                                      │
+┌──────────────────┐                  │
+│  Risk Management │◀─────────────────┤
+│  (Counterparty   │                  │
+│   Exposure)      │                  │
+└──────────────────┘                  │
+                                      │
+┌──────────────────┐                  │
+│  Portfolio Mgmt  │◀─────────────────┤
+│  (Position Recon)│                  │
+└──────────────────┘                  │
+                                      │
+┌──────────────────┐                  │
+│  Document Store  │◀─────────────────┘
+│  (Audit Trail)   │
+└──────────────────┘
+```
+
+---
+
+## 2. TFOCO Core System Architecture
+
+### 2.1 System Overview
 
 TFOCO is a full-stack financial document reader application that extracts structured entities from unstructured documents using Named Entity Recognition (NER).
 
@@ -29,9 +186,9 @@ TFOCO is a full-stack financial document reader application that extracts struct
 
 ---
 
-## Component Details
+## 3. Component Details
 
-### 1. Frontend Architecture
+### 3.1 Frontend Architecture
 
 **Technology Stack:**
 - **Framework:** Next.js 14 (React 18)
@@ -69,7 +226,7 @@ frontend/src/
 
 ---
 
-### 2. Backend Architecture
+### 3.2 Backend Architecture
 
 **Technology Stack:**
 - **Framework:** FastAPI 0.109
@@ -106,7 +263,7 @@ backend/app/
 
 ---
 
-### 3. Extraction Engine
+### 3.3 Extraction Engine
 
 **Rule-Based Extractor (`rule_based.py`):**
 
@@ -139,7 +296,7 @@ Entity: {
 
 ---
 
-### 4. Normalizers (`normalizers.py`)
+### 3.4 Normalizers (`normalizers.py`)
 
 **Amount Normalization:**
 ```python
@@ -162,7 +319,7 @@ Entity: {
 
 ---
 
-### 5. Document Processing Pipeline
+### 3.5 Document Processing Pipeline
 
 ```
 Upload → Validation → Text Extraction → Entity Extraction → Response
@@ -180,7 +337,7 @@ Upload → Validation → Text Extraction → Entity Extraction → Response
 
 ---
 
-### 6. Data Models (Pydantic)
+### 3.6 Data Models (Pydantic)
 
 **Entity Schema:**
 ```typescript
@@ -209,7 +366,7 @@ Upload → Validation → Text Extraction → Entity Extraction → Response
 
 ---
 
-### 7. Frontend State Management
+### 3.7 Frontend State Management
 
 **Component State Flow:**
 
@@ -228,7 +385,7 @@ App (page.tsx)
 
 ---
 
-### 8. Styling System
+### 3.8 Styling System
 
 **Design Tokens:**
 
@@ -258,7 +415,7 @@ hover: scale-105 + shadow-xl
 
 ---
 
-### 9. Performance Optimizations
+### 3.9 Performance Optimizations
 
 **Backend:**
 - Async file handling with `aiofiles`
@@ -274,7 +431,7 @@ hover: scale-105 + shadow-xl
 
 ---
 
-### 10. Testing Strategy
+### 3.10 Testing Strategy
 
 **Backend Tests:**
 ```python
@@ -299,7 +456,7 @@ extraction.test.tsx      # Full user flow (future)
 
 ---
 
-### 11. Security Considerations
+### 3.11 Security Considerations
 
 **Implemented:**
 - File type validation (whitelist: PDF, DOCX, TXT)
@@ -318,7 +475,7 @@ extraction.test.tsx      # Full user flow (future)
 
 ---
 
-### 12. Deployment Architecture
+### 3.12 Deployment Architecture
 
 **Docker Compose:**
 
@@ -348,7 +505,7 @@ networks:
 
 ---
 
-### 13. Extension Points
+### 3.13 Extension Points
 
 **Add LLM Fallback:**
 ```python
@@ -413,8 +570,3 @@ async def batch_extract(files: List[UploadFile]):
 5. **Phase 5:** ML model training on extracted data
 
 ---
-
-**Last Updated:** November 2024  
-**Version:** 1.0.0  
-**Maintainer:** The Family Office
-
